@@ -3,10 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>나의 첫 웹페이지</title>
+    <!-- <title>나의 첫 웹페이지</title> -->
+    <title>글 작성하기</title> 
 </head>
 <body>
-    <h1>안녕하세요! 이것은 제가 만든 첫 웹페이지입니다.</h1>
-    <p>이 페이지는 Github Pages를 통해 공개됩니다.</p>
+    <!-- <h1>안녕하세요! 이것은 제가 만든 첫 웹페이지입니다.</h1>
+    <p>이 페이지는 Github Pages를 통해 공개됩니다.</p> -->
+    <h1>게시글 작성</h1>
+    <form id="postForm">
+        <input type="text" id="title" placeholder="제목" required></br>
+        <textarea id="content" placeholder="내용" required></textarea><br>
+        <button type="submit">글 작성</button>
+    </form>
+
+    <h2>게시글 목록</h2>
+    <ul id="postsList"></ul>
+
+    <script>
+        // 글 작성 폼 제출 시
+        document.getElementById('postForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+
+            const response = await fetch('http://localhost:3000/posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content })
+            });
+
+            if (response.ok) {
+                alert('글 작성 완료');
+                document.getElementById('title').value = '';
+                document.getElementById('content').value = '';
+                loadPosts(); // 새로고침 없이 목록 갱신
+            } else {
+                alert('글 작성 실패');
+            }
+        });
+
+        // 글 목록 불러오기
+        async function loadPosts() {
+            const res = await fetch('http://localhost:3000/posts');
+            const posts = await res.json();
+
+            const list = document.getElementById('postsList');
+            list.innerHTML = '';
+            posts.forEach(post => {
+                const li = document.createElement('li');
+                li.textContent = `${post.title} - ${post.content}`;
+                list.appendChild(li);
+            });
+        }
+
+        // 페이지 열리면 글 목록 불러오기
+        window.onload = loadPosts;
+    </script>
 </body>
 </html>
