@@ -20,13 +20,14 @@
     <ul id="postsList"></ul>
 
     <script>
+        const BASE_URL = 'https://myweb-github.onrender.com/';
         // 글 작성 폼 제출 시
         document.getElementById('postForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const title = document.getElementById('title').value;
             const content = document.getElementById('content').value;
 
-            const response = await fetch('http://localhost:3000/posts', {
+            const response = await fetch(`${BASE_URL}/posts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title, content })
@@ -44,7 +45,7 @@
 
         // 글 목록 불러오기
         async function loadPosts() {
-            const res = await fetch('http://localhost:3000/posts');
+            const res = await fetch(`${BASE_URL}/posts`);
             const posts = await res.json();
 
             const list = document.getElementById('postsList');
