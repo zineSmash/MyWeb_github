@@ -36,6 +36,7 @@
             // 작성 버튼 누르면 버튼 비활성화 하기 + 로딩 텍스트 표시
             submitBtn.disabled = true;
             submitBtn.textContent = "작성 중...";
+            alert('글 작성 중 ...');
 
         try {
             const response = await fetch(`${BASE_URL}/posts`, {
