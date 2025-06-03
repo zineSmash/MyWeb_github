@@ -25,9 +25,19 @@
         // 글 작성 폼 제출 시
         document.getElementById('postForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const title = document.getElementById('title').value;
-            const content = document.getElementById('content').value;
 
+            const titleInput = document.getElementById('title');
+            const contentInput = document.getElementById('content');
+            const submitBtn = this.querySelector('button[type="submit"]');
+
+            const title = titleInput.value;
+            const content = contentInput.value;
+
+            // 작성 버튼 누르면 버튼 비활성화 하기 + 로딩 텍스트 표시
+            submitBtn.disabled = true;
+            submitBtn.textContent = "작성 중...";
+
+        try {
             const response = await fetch(`${BASE_URL}/posts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -36,12 +46,18 @@
 
             if (response.ok) {
                 alert('글 작성 완료');
-                document.getElementById('title').value = '';
-                document.getElementById('content').value = '';
+                titleInput.value = '';
+                contentInput.value = '';
                 loadPosts(); // 새로고침 없이 목록 갱신
             } else {
                 alert('글 작성 실패');
             }
+        } catch (err) {
+            alert('네트워크 오류');
+        } finally {
+            submitBtn.disabled = false; // 버튼 재활성화
+            submitBtn.textContent = "글 작성";
+        }
         });
 
         // 글 목록 불러오기
