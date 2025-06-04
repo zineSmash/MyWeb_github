@@ -42,7 +42,7 @@ const upload = multer({
 router.post('/', upload.array('images'), async (req, res) => {
     const { title, content } = req.body;
     const imagePaths = req.files.map(file => file.path); // Cloudinary URL
-    
+    console.log(imagePaths);
     try {
         const post = new Post({ title, content, images: imagePaths });
         await post.save();
