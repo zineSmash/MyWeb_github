@@ -4,17 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- <title>나의 첫 웹페이지</title> -->
-    <title>글 작성하기</title> 
+    <title>웹툰 업로드 플랫폼</title> 
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .image-preview-list { margin-top: 10px; }
+        .image-preview-list img { max-width: 100px; max-height: 100px; margin-right: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    </style>
 </head>
 <body>
     <!-- <h1>안녕하세요! 이것은 제가 만든 첫 웹페이지입니다.</h1>
     <p>이 페이지는 Github Pages를 통해 공개됩니다.</p> -->
-    <h1>게시글 작성</h1>
-    <form id="postForm">
-        <input type="text" id="title" placeholder="제목" required><br>
-        <textarea id="content" placeholder="내용" required></textarea><br>
+    <h1>글 작성</h1>
+    <form id="postForm" enctype="multipart/form-data">
+        <label>제목: <input type="text" name="title" required></label> <br/><br/>
+        <label>내용: <textarea name="content" required></textarea></label> <br/><br/>
+        
+        <!-- 이미지 업로드 -->
+        <label>이미지 첨부:
+            <input type="file" id="imageInput" name="images" accept=".jpg, .jpeg, .png" multiple/>
+        </label><br/>
+
+        <!-- 미리보기 -->
+        <div id="imagePreview" class="image-preview-list"></div> <br/>
+
         <button type="submit">글 작성</button>
     </form>
+
+    <script>
+
+    </script>
 
     <h2>게시글 목록</h2>
     <ul id="postsList"></ul>
@@ -22,37 +40,65 @@
     <script>
         const BASE_URL = 'https://myweb-github.onrender.com';
 
+        const imageInput = document.getElementById('imageInput');
+        const previewContainer = document.getElementById('imagePreview');
+
+        imageInput.addEventListener('change', () => {
+            previewContainer.innerHTML = '';
+            const files = Array.from(imageInput.files);
+            files.forEach(file => {
+                if (!file.type.startWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            })
+        })
+
         // 글 작성 폼 제출 시
         document.getElementById('postForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const titleInput = document.getElementById('title');
-            const contentInput = document.getElementById('content');
+            const title = document.getElementById('title');
+            const content = document.getElementById('content');
             const submitBtn = this.querySelector('button[type="submit"]');
-
-            const title = titleInput.value;
-            const content = contentInput.value;
 
             // 작성 버튼 누르면 버튼 비활성화 하기 + 로딩 텍스트 표시
             submitBtn.disabled = true;
             submitBtn.textContent = "작성 중...";
 
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('content', content);
+
+            const files = imageInput.files;
+            for (let i=0; i<files.length; i++) {
+                formData.append('images', files[i]);
+            }
+
         try {
             const response = await fetch(`${BASE_URL}/posts`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, content })
+                // headers: { 'Content-Type': 'application/json' },
+                // body: JSON.stringify({ title, content })
+                body: formData
             });
 
             if (response.ok) {
                 alert('글 작성 완료');
-                titleInput.value = '';
-                contentInput.value = '';
+                // titleInput.value = '';
+                // contentInput.value = '';
+                this.reset();
+                previewContainer.innerHTML = '';
                 loadPosts(); // 새로고침 없이 목록 갱신
             } else {
                 alert('글 작성 실패');
             }
         } catch (err) {
+            console.error(err);
             alert('네트워크 오류');
         } finally {
             submitBtn.disabled = false; // 버튼 재활성화
@@ -64,12 +110,19 @@
         async function loadPosts() {
             const res = await fetch(`${BASE_URL}/posts`);
             const posts = await res.json();
-
             const list = document.getElementById('postsList');
             list.innerHTML = '';
             posts.forEach(post => {
                 const li = document.createElement('li');
-                li.textContent = `${post.title} - ${post.content}`;
+                const link = document.createElement('a');
+                link.href = `#`;
+                link.textContent = post.title;
+                link.addEventListener('click', () => {
+                    alert(`제목: ${post.title}\n내용: ${post.content}`);
+                    // 향후 별도 상세 페이지로 연결
+                })
+                // li.textContent = `${post.title} - ${post.content}`;
+                li.appendChild(link);
                 list.appendChild(li);
             });
         }
