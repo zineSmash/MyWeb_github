@@ -11,6 +11,7 @@ const PORT = 3000;
 app.use(express.json()); // JSON 요청 처리 가능하게 해줌
 app.use(cors());
 app.use('/posts', postRouter);
+app.use('/uploads', express.static('uploads'));
 
 // // 메모리에 글 저장
 // let posts = [];
