@@ -134,7 +134,7 @@
                 if (post.images && post.images.length > 0) {
                     post.images.forEach(url => {
                         const img = document.createElement('img');
-                        img.src = `${BASE_URL}${url}`;
+                        img.src = `${url}`;//`${BASE_URL}${url}`;
                         img.style.maxWidth = '80px';
                         img.style.marginLeft = '10px';
                         li.appendChild(img);
