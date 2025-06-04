@@ -1,34 +1,36 @@
 const express = require('express');
 const router = express.Router();
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
-const fs = require('fs');  // 파일 시스템 모듈
-const path = require('path');
+// const fs = require('fs');  // 파일 시스템 모듈
+// const path = require('path');
 const Post = require('../models/Post');
 
-// uploads 경로 설정
-const uploadPath = path.join(__dirname, '..', 'uploads');
+// Cloudinary 환경변수 설정
+cloudinary.config({
+    cloud_name: 'dhdt9ev5k',
+    api_key: '486822561298586',
+    api_secret: 'K01vEA5ZbDGC77MmyM9PTs62EBM'
+});
 
-// 폴더 없으면 생성
-if (!fs.existsSync(uploadPath)) {
-    fs.mkdirSync(uploadPath, { recursive: true });
-}
-
-// 파일 저장 설정
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+// Cloudinary용 multer storage 설정
+const cloudStorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'webtoon_uploads', // Cloudinary 내 폴더명
+        allowed_formats: ['jpg', 'png'],
+        transformation: [{width: 800, height: 800, crop: 'limit' }]
     }
 });
 
-// 100MB 제한, 여러 개 파일 허용
+// 업로드 미들웨어
 const upload = multer({
-    storage,
-    limits: {fileSize: 100 * 1024 * 1024 },
+    storage: cloudStorage,
+    limits: { fileSize: 100 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const allowedTypes = ['image/jpeg', 'image/png'];
-        if (allowedTypes.includes(file.mimetype)) {
+        if(allowedTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
             cb(new Error('허용되지 않는 파일 형식입니다.'));
@@ -36,11 +38,11 @@ const upload = multer({
     }
 });
 
-// 게시글 작성 라우트
+// 게시글 작성
 router.post('/', upload.array('images'), async (req, res) => {
     const { title, content } = req.body;
-    const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
-
+    const imagePaths = req.files.map(file => file.path); // Cloudinary URL
+    
     try {
         const post = new Post({ title, content, images: imagePaths });
         await post.save();
@@ -51,22 +53,10 @@ router.post('/', upload.array('images'), async (req, res) => {
     }
 });
 
-
-// // 글 작성
-// router.post('/', async (req, res) => {
-//     const { title, content } = req.body;
-//     try {
-//         const newPost = new Post({ title, content });
-//         await newPost.save();
-//         res.status(201).json({message: '글 저장 성공' });
-//     } catch (err) {
-//         res.status(500).json({ message: '서버 오류' });
-//     }
-// });
-
-// 글 목록
-router.get('/', async (req, res) => {   
-    try { const posts = await Post.find().sort({ createdAt: -1 });
+// 게시글 목록
+router.get('/', async (req, res) => {
+    try {
+        const posts = await Post.find().sort({ createdAt: -1 });
         res.json(posts);
     } catch (err) {
         res.status(500).json({ message: '게시글 불러오기 실패' });
@@ -74,3 +64,73 @@ router.get('/', async (req, res) => {
 });
 
 module.exports = router;
+
+// // uploads 경로 설정
+// const uploadPath = path.join(__dirname, '..', 'uploads');
+
+// // 폴더 없으면 생성
+// if (!fs.existsSync(uploadPath)) {
+//     fs.mkdirSync(uploadPath, { recursive: true });
+// }
+
+// // 파일 저장 설정
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => cb(null, 'uploads/'),
+//     filename: (req, file, cb) => {
+//         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+//         cb(null, uniqueSuffix + path.extname(file.originalname));
+//     }
+// });
+
+// // 100MB 제한, 여러 개 파일 허용
+// const upload = multer({
+//     storage,
+//     limits: {fileSize: 100 * 1024 * 1024 },
+//     fileFilter: (req, file, cb) => {
+//         const allowedTypes = ['image/jpeg', 'image/png'];
+//         if (allowedTypes.includes(file.mimetype)) {
+//             cb(null, true);
+//         } else {
+//             cb(new Error('허용되지 않는 파일 형식입니다.'));
+//         }
+//     }
+// });
+
+// // 게시글 작성 라우트
+// router.post('/', upload.array('images'), async (req, res) => {
+//     const { title, content } = req.body;
+//     const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
+
+//     try {
+//         const post = new Post({ title, content, images: imagePaths });
+//         await post.save();
+//         res.status(201).json(post);
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ error: '게시글 작성 실패' });
+//     }
+// });
+
+
+// // // 글 작성
+// // router.post('/', async (req, res) => {
+// //     const { title, content } = req.body;
+// //     try {
+// //         const newPost = new Post({ title, content });
+// //         await newPost.save();
+// //         res.status(201).json({message: '글 저장 성공' });
+// //     } catch (err) {
+// //         res.status(500).json({ message: '서버 오류' });
+// //     }
+// // });
+
+// // 글 목록
+// router.get('/', async (req, res) => {   
+//     try { const posts = await Post.find().sort({ createdAt: -1 });
+//         res.json(posts);
+//     } catch (err) {
+//         res.status(500).json({ message: '게시글 불러오기 실패' });
+//     }
+// });
+
+// module.exports = router;
