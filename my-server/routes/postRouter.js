@@ -16,7 +16,15 @@ const storage = multer.diskStorage({
 // 100MB 제한, 여러 개 파일 허용
 const upload = multer({
     storage,
-    limits: {fileSize: 100 * 1024 * 1024 }
+    limits: {fileSize: 100 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/png'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('허용되지 않는 파일 형식입니다.'));
+        }
+    }
 });
 
 // 게시글 작성 라우트
