@@ -1,8 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const fs = require('fs');  // 파일 시스템 모듈
 const path = require('path');
 const Post = require('../models/Post');
+
+// uploads 경로 설정
+const uploadPath = path.join(__dirname, '..', 'uploads');
+
+// 폴더 없으면 생성
+if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+}
 
 // 파일 저장 설정
 const storage = multer.diskStorage({
