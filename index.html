@@ -106,44 +106,108 @@
         }
         });
 
-        // 글 목록 불러오기
-        async function loadPosts() {
+        // 글 목록 불러오기 (수정)
+        async function loadPosts(){
             const res = await fetch(`${BASE_URL}/posts`);
             const posts = await res.json();
             const list = document.getElementById('postsList');
             list.innerHTML = '';
             posts.forEach(post => {
                 const li = document.createElement('li');
+                li.style.display = 'flex';  // 버튼과 내용 옆으로 나란히 배치
+                li.style.alignItems = 'center';
+                li.style.marginBottom = '10px';
+
+                // [삭제] 버튼 생성
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '삭제';
+                deleteBtn.style.marginRight = '10px';
+                deleteBtn.onclick = async () => {
+                    if (confirm('정말 삭제하시겠습니까?')) {
+                        const res = await fetch(`${BASE_URL}/posts/${post._id}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            alert('삭제 완료');
+                            loadPosts();
+                        } else {
+                            alert('삭제 실패');
+                        }
+                    }
+                };
+                li.appendChild(deleteBtn);
+
+                // 내용 영역 (제목 + 이미지)
+                const contentDiv = document.createElement('div');
+
                 const link = document.createElement('a');
                 link.href = `#`;
                 link.textContent = post.title;
+                link.style.fontWeight = 'bold';
                 link.addEventListener('click', () => {
                     let message = `제목: ${post.title}\n내용: ${post.content}`
                     if (post.images && post.images.length > 0) {
-                        message += `\n이미지: ${post.images.join(',')}`;
+                        message += `\n이미지: ${post.images.join('.')}`;
                     }
                     alert(message);
-                    // alert(`제목: ${post.title}\n내용: ${post.content}`);
-                    // 향후 별도 상세 페이지로 연결
-                })
-                // li.textContent = `${post.title} - ${post.content}`;
-                li.appendChild(link);
-                // list.appendChild(li);
-                
-                // 이미지가 있다면 출력
-                if (post.images && post.images.length > 0) {
+                });
+
+                contentDiv.appendChild(link);
+
+                if(post.images && post.images.length > 0){
+                    const imageContainer = document.createElement('div');
                     post.images.forEach(url => {
                         const img = document.createElement('img');
-                        img.src = `${url}`;//`${BASE_URL}${url}`;
+                        img.src = `${url}`;
                         img.style.maxWidth = '80px';
                         img.style.marginLeft = '10px';
-                        li.appendChild(img);
+                        img.style.marginTop = '5px';
+                        imageContainer.appendChild(img);
                     });
+                    contentDiv.appendChild(imageContainer);
                 }
 
-                document.getElementById('postsList').appendChild(li);
+                li.appendChild(contentDiv);
+                list.appendChild(li);
             });
         }
+
+        // // 글 목록 불러오기
+        // async function loadPosts() {
+        //     const res = await fetch(`${BASE_URL}/posts`);
+        //     const posts = await res.json();
+        //     const list = document.getElementById('postsList');
+        //     list.innerHTML = '';
+        //     posts.forEach(post => {
+        //         const li = document.createElement('li');
+        //         const link = document.createElement('a');
+        //         link.href = `#`;
+        //         link.textContent = post.title;
+        //         link.addEventListener('click', () => {
+        //             let message = `제목: ${post.title}\n내용: ${post.content}`
+        //             if (post.images && post.images.length > 0) {
+        //                 message += `\n이미지: ${post.images.join(',')}`;
+        //             }
+        //             alert(message);
+        //             // alert(`제목: ${post.title}\n내용: ${post.content}`);
+        //             // 향후 별도 상세 페이지로 연결
+        //         })
+        //         // li.textContent = `${post.title} - ${post.content}`;
+        //         li.appendChild(link);
+        //         // list.appendChild(li);
+                
+        //         // 이미지가 있다면 출력
+        //         if (post.images && post.images.length > 0) {
+        //             post.images.forEach(url => {
+        //                 const img = document.createElement('img');
+        //                 img.src = `${url}`;//`${BASE_URL}${url}`;
+        //                 img.style.maxWidth = '80px';
+        //                 img.style.marginLeft = '10px';
+        //                 li.appendChild(img);
+        //             });
+        //         }
+
+        //         document.getElementById('postsList').appendChild(li);
+        //     });
+        // }
 
         // 페이지 열리면 글 목록 불러오기
         window.onload = loadPosts;
