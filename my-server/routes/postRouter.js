@@ -64,39 +64,71 @@ router.get('/', async (req, res) => {
 });
 
 
-// 게시글 삭제 
+// 게시글 삭제
 router.delete('/:id', async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
-        if(!post) return res.status(404).json({ message: '게시글을 찾을 수 없습니다.'});
+        if (!post) return res.status(404).json({ message: '게시글이 존재하지 않습니다.' });
 
-        // 이미지들 삭제
-        for (const imagePath of post.images) {
-            if (imagePath.startsWith('https://res.cloudinary.com/')) {
-                // Cloudinary 이미지
-                const publicId = imagePath.split('/').slice(-2).join('/').split('.')[0]; // 예: webtoon_uploads/abcd1234
-                await cloudinary.uploader.destroy(publicId);
-            } else if (imagePath.startsWith('/uploads/')) {
-                // 로컬 이미지
-                const localPath = path.join(__dirname, '..', imagePath);
-                fs.unlink(localPath, err => {
-                    if (err) console.error('로컬 파일 삭제 실패:', err);
-                });
+        // 이미지가 있다면 삭제 시도
+        if (post.images && post.images.length > 0) {
+            for (const url of post.images) {
+                const match = url.match(/\/upload\/(?:v\d+\/)?([^\.\/]+)\./); // public_id 추출
+                if (match && match[1]) {
+                    const publicId = `webtoon_uploads/${match[1]}`;
+                    try {
+                        await cloudinary.uploader.destroy(publicId);
+                    } catch (err) {
+                        console.warn(`Cloudinary 이미지 삭제 실패 (무시): ${publicId}`, err.message);
+                        // 실패하더라도 게시글 삭제는 계속 진행
+                    }
+                }
             }
         }
 
-        // 게시글 삭제
-        await Post.findByIdAndDelete(req.params.id);
-
-        res.json({ message: '게시글과 이미지가 성공적으로 삭제되었습니다.' });
+        await post.deleteOne();
+        res.json({ message: '게시글 및 이미지 삭제 완료'});
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: '게시글 삭제 중 오류 발생' });
+        console.error('삭제 중 에러:', err);
+        res.status(500).json({ message: '서버 에러로 삭제 실패'});
     }
 });
 
-
 module.exports = router;
+
+// // 게시글 삭제 
+// router.delete('/:id', async (req, res) => {
+//     try {
+//         const post = await Post.findById(req.params.id);
+//         if(!post) return res.status(404).json({ message: '게시글을 찾을 수 없습니다.'});
+
+//         // 이미지들 삭제
+//         for (const imagePath of post.images) {
+//             if (imagePath.startsWith('https://res.cloudinary.com/')) {
+//                 // Cloudinary 이미지
+//                 const publicId = imagePath.split('/').slice(-2).join('/').split('.')[0]; // 예: webtoon_uploads/abcd1234
+//                 await cloudinary.uploader.destroy(publicId);
+//             } else if (imagePath.startsWith('/uploads/')) {
+//                 // 로컬 이미지
+//                 const localPath = path.join(__dirname, '..', imagePath);
+//                 fs.unlink(localPath, err => {
+//                     if (err) console.error('로컬 파일 삭제 실패:', err);
+//                 });
+//             }
+//         }
+
+//         // 게시글 삭제
+//         await Post.findByIdAndDelete(req.params.id);
+
+//         res.json({ message: '게시글과 이미지가 성공적으로 삭제되었습니다.' });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ message: '게시글 삭제 중 오류 발생' });
+//     }
+// });
+
+
+// module.exports = router;
 
 // // uploads 경로 설정
 // const uploadPath = path.join(__dirname, '..', 'uploads');
