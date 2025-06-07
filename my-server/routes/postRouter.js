@@ -63,6 +63,31 @@ router.get('/', async (req, res) => {
     }
 });
 
+// 게시글 수정
+router.patch('/:id', upload.array('images'), async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({ message: '게시글이 존재하지 않습니다.'});
+
+        // 1. 텍스트 수정
+        post.title = title;
+        post.content = content;
+
+        // 2. 이미지가 새로 업로드된 경우 추가
+        if (req.files && req.files.length > 0){
+            const newImagePaths = req.files.map(file => file.path);
+            post.images = newImagePaths;
+        }
+
+        await post.save();
+        res.json({ message: '수정 완료', post });
+    } catch (err) {
+        console.error('수정 중 에러:', err);
+        res.status(500).json({ message: '서버 에러로 수정 실패' });
+    }
+});
+
 
 // 게시글 삭제
 router.delete('/:id', async (req, res) => {

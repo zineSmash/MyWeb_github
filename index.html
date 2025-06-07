@@ -42,7 +42,9 @@
 
         const imageInput = document.getElementById('imageInput');
         const previewContainer = document.getElementById('imagePreview');
+        let editingPostId = null;  // 수정 중인 글 ID 저장
 
+        // 이미지 미리 보기
         imageInput.addEventListener('change', () => {
             previewContainer.innerHTML = '';
             const files = Array.from(imageInput.files);
@@ -68,7 +70,7 @@
 
             // 작성 버튼 누르면 버튼 비활성화 하기 + 로딩 텍스트 표시
             submitBtn.disabled = true;
-            submitBtn.textContent = "작성 중...";
+            submitBtn.textContent = editingPostId ? "수정 중..." : "작성 중...";
 
             const formData = new FormData();
             formData.append('title', title.value);
@@ -80,22 +82,38 @@
             }
 
         try {
-            const response = await fetch(`${BASE_URL}/posts`, {
-                method: 'POST',
-                // headers: { 'Content-Type': 'application/json' },
-                // body: JSON.stringify({ title, content })
+            // const response = await fetch(`${BASE_URL}/posts`, {
+            //     method: 'POST',
+            //     // headers: { 'Content-Type': 'application/json' },
+            //     // body: JSON.stringify({ title, content })
+            //     body: formData
+            const url = editingPostId ? `${BASE_URL}/posts/${editingPostId}` : `${BASE_URL}/posts`;
+            const method = editingPostId ? 'PATCH' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
                 body: formData
+            
             });
 
             if (response.ok) {
-                alert('글 작성 완료');
+                // alert('글 작성 완료');
+                // title.value = '';
+                // content.value = '';
+                // // this.reset();
+                // imageInput.value = '';
+                // previewContainer.innerHTML = '';
+                // loadPosts(); // 새로고침 없이 목록 갱신
+                alert(editingPostId ? '글 수정 완료' : '글 작성 완료');
+                editingPostId = null; // 수정 상태 해제
                 title.value = '';
                 content.value = '';
-                // this.reset();
+                imageInput.value = '';
                 previewContainer.innerHTML = '';
-                loadPosts(); // 새로고침 없이 목록 갱신
+                loadPosts();
             } else {
-                alert('글 작성 실패');
+                // alert('글 작성 실패');
+                alert(editingPostId ? '글 수정 실패' : '글 작성 실패');
             }
         } catch (err) {
             console.error(err);
@@ -135,6 +153,13 @@
                 };
                 li.appendChild(deleteBtn);
 
+                // 수정 버튼
+                const editBtn = document.createElement('button');
+                editBtn.textContent = '수정';
+                editBtn.style.marginRight = '10px';
+                editBtn.onclick = () => openEditForm(post);
+                li.appendChild(editBtn);
+
                 // 내용 영역 (제목 + 이미지)
                 const contentDiv = document.createElement('div');
 
@@ -168,6 +193,16 @@
                 li.appendChild(contentDiv);
                 list.appendChild(li);
             });
+        }
+
+        // 수정 폼 열기
+        function openEditForm(post) {
+            document.getElementById('title').value = post.title;
+            document.getElementById('content').value = post.content;
+            imageInput.value = '';  // 이미지 새로 선택해야 함
+            previewContainer.innerHTML = '';
+            editingPostId = post._id;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // // 글 목록 불러오기
@@ -209,8 +244,11 @@
         //     });
         // }
 
-        // 페이지 열리면 글 목록 불러오기
-        window.onload = loadPosts;
+        // // 페이지 열리면 글 목록 불러오기
+        // window.onload = loadPosts;
+
+        // 페이지 로딩 시 게시글 불러오기
+        window.addEventListener('DOMContentLoaded', loadPosts);
     </script>
 </body>
 </html>
